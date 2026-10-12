@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
-import { getDefaultOptions } from '../utils/promptBuilder'
+import { loadTaskCatalog } from './useTaskCatalog'
+import { defaultOptions } from '../utils/tasks'
 import { ingestAudio, pollJob, getTranscript } from '../utils/apiClient'
 
 const LANGUAGE_KEY = 'semaje_language'
@@ -15,7 +16,7 @@ export function useTranscribe() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [task, setTask] = useState('transcription')
-  const [options, setOptions] = useState(getDefaultOptions('transcription'))
+  const [options, setOptions] = useState({})
   const [savedId, setSavedId] = useState(null)
   const [jobId, setJobId] = useState(null)
   // '' = auto-detect. Any registry code/alias works: sw, kik_Latn, Yoruba, ...
@@ -30,9 +31,14 @@ export function useTranscribe() {
     } catch { /* storage unavailable (private mode) — keep in memory */ }
   }, [language, engine])
 
+  // Defaults come from the server's task catalog (GET /api/tasks).
+  useEffect(() => {
+    loadTaskCatalog().then(({ tasks }) => setOptions(defaultOptions(tasks, 'transcription'))).catch(() => {})
+  }, [])
+
   const changeTask = useCallback((newTask) => {
     setTask(newTask)
-    setOptions(getDefaultOptions(newTask))
+    loadTaskCatalog().then(({ tasks }) => setOptions(defaultOptions(tasks, newTask))).catch(() => setOptions({}))
   }, [])
 
   const handleFile = async (file) => {

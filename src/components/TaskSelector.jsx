@@ -4,7 +4,8 @@ import {
   Languages, Globe, Users, Mic, ClipboardList, Stethoscope, Scale,
   Music, Phone, ChevronDown,
 } from 'lucide-react'
-import { TASK_DEFINITIONS, CATEGORIES } from '../utils/promptBuilder'
+import { useTaskCatalog } from '../hooks/useTaskCatalog'
+import { groupTasks } from '../utils/tasks'
 
 const TASK_ICONS = {
   transcription: FileText,
@@ -26,15 +27,12 @@ const TASK_ICONS = {
 
 export default function TaskSelector({ task, onTaskChange }) {
   const [open, setOpen] = useState(false)
-  const current = TASK_DEFINITIONS[task]
+  const { tasks, categories: CATEGORIES, error } = useTaskCatalog()
   const CurrentIcon = TASK_ICONS[task] || FileText
-
-  const grouped = {}
-  for (const [id, def] of Object.entries(TASK_DEFINITIONS)) {
-    const cat = def.category
-    if (!grouped[cat]) grouped[cat] = []
-    grouped[cat].push({ id, ...def })
-  }
+  if (error) return <div className="error-banner">{error}</div>
+  if (!tasks) return <div className="text-xs muted">Loading tasks…</div>
+  const current = tasks[task] || Object.values(tasks)[0]
+  const grouped = groupTasks(tasks)
 
   return (
     <div className="relative">

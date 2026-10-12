@@ -1,10 +1,15 @@
-# semaje frontend — serves the vite build, proxies API + WS to the api service.
+# semaje-web — serves the built app and proxies /api and /ws to the semaje API.
+# ${SEMAJE_API_UPSTREAM} (default api:3001) and ${SEMAJE_RESOLVER} are substituted at container start.
 server {
   listen 80;
-  client_max_body_size 600m;
+  # Resolve the API per request (cached 10 s), not once at startup: nginx then
+  # starts before the API exists and follows the API to a new IP after restarts.
+  resolver ${SEMAJE_RESOLVER} valid=10s ipv6=off;
+  set $semaje_api http://${SEMAJE_API_UPSTREAM};
+  client_max_body_size ${SEMAJE_MAX_UPLOAD};
 
   location /api/ {
-    proxy_pass http://api:3001;
+    proxy_pass $semaje_api;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -12,7 +17,7 @@ server {
   }
 
   location /ws {
-    proxy_pass http://api:3001;
+    proxy_pass $semaje_api;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";

@@ -1,9 +1,10 @@
-import { TASK_DEFINITIONS } from '../utils/promptBuilder'
+import { useTaskCatalog } from '../hooks/useTaskCatalog'
 
 export default function OptionsBar({ task, options, onChange }) {
   const toggle = (key) => onChange(prev => ({ ...prev, [key]: !prev[key] }))
 
-  const taskDef = TASK_DEFINITIONS[task]
+  const { tasks } = useTaskCatalog()
+  const taskDef = tasks?.[task]
   if (!taskDef || !taskDef.options.length) return null
 
   return (
